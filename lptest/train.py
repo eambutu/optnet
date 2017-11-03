@@ -36,7 +36,6 @@ def main():
     with open('./data/{}/labels.pt'.format(p), 'rb') as f:
         Y = torch.load(f)
 
-    import pdb; pdb.set_trace()
     N = X.size(0)
 
     nTrain = int(N * (1. - args.testPct))
@@ -56,7 +55,8 @@ def main():
     os.makedirs(save)
 
     print('Building model')
-    model = models.OptNetEq(args.numVar, args.numConst, args.Qpenalty)
+    model = models.OptNetEq(args.numVar, args.numConst, args.Qpenalty,
+                            not args.no_cuda)
 
     if args.cuda:
         model = model.cuda()
@@ -90,7 +90,7 @@ def test(args, model, testX, testY):
         test_loss += nn.MSELoss()(output, batch_targets)
 
     numBatches = testX.size(0) / batchSz
-    test_loss = test_loss.data[0] / nBatches
+    test_loss = test_loss.data[0] / numBatches
     print('Test average loss: {:.4f}'.format(test_loss))
 
 def train(args, epoch, model, optimizer, trainX, trainY):
@@ -106,7 +106,7 @@ def train(args, epoch, model, optimizer, trainX, trainY):
 
     for i in range(0, trainX.size(0), batchSz):
         print('Testing model: {}/{}'.format(i, trainX.size(0)), end='\r')
-        batch_data[:] = train[i:i + batchSz]
+        batch_data[:] = trainX[i:i + batchSz]
         batch_targets.data[:] = trainY[i:i + batchSz]
 
         optimizer.zero_grad()
